@@ -48,5 +48,8 @@ class StandalonePipeline(object):
             self.evaluate()
             # self.handler.evaluate()
 
+            self.trainer.lr = self.trainer.lr * 0.995
+            self.trainer.setup_optim(epochs=1, batch_size=32, lr=self.trainer.lr)
+
     def evaluate(self):
         loss_, acc_ = self.handler.evaluate()

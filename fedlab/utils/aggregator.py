@@ -76,7 +76,7 @@ class Aggregators(object):
         # print("----1---- weights(ratio num data):", weights)
 
         '''Calculate weights from init-model, client-models, weights(num-data)'''
-        gradients_list = [(init_model-w)/0.02 for w in serialized_params_list]
+        gradients_list = [(init_model-w)/0.01 for w in serialized_params_list]
         gradients_list = [t.numpy() for t in gradients_list]
         gradients_list = torch.tensor(gradients_list)
         weights_2d = weights.unsqueeze(1)
@@ -84,20 +84,23 @@ class Aggregators(object):
         gradient_global = torch.sum(gradient_global, 0)
         cosin_similary_list = [torch.nn.CosineSimilarity(dim=0)(gradient_global, grad_k) for grad_k in gradients_list]
         thetas = torch.tensor([torch.arccos(cos).item() for cos in cosin_similary_list])
-        # print("----1---- thetas:", thetas)
-        # print("----2---- pre_thetas:", pre_thetas)
+        print("----1---- thetas:", thetas)
+        print("----2---- pre_thetas:", pre_thetas)
 
-        thetas_smooth = thetas
-        # thetas_smooth = pre_thetas * (t-1)/t + thetas * 1/t
+        # thetas_smooth = thetas
+        if pre_thetas is None:
+            thetas_smooth = thetas
+        else:
+            thetas_smooth = pre_thetas * (t-1)/t + thetas * 1/t
 
         def gompertz_func(theta, alpha=5.):
             return alpha * (1 - np.exp(-np.exp(-alpha*(theta-1))))
-        # print("----3---- thetas_smooth:", thetas_smooth)
-        re_weights = gompertz_func(thetas_smooth, alpha=5.)
+        print("----3---- thetas_smooth:", thetas_smooth)
+        re_weights = np.exp(gompertz_func(thetas_smooth, alpha=5.))
         # print("----4---- re_weights:", re_weights)
 
         re_weights = re_weights / torch.sum(re_weights)
-        # print("----5---- re_weights:", re_weights)
+        print("----5---- re_weights:", re_weights)
 
         assert torch.all(re_weights >= 0), "weights should be non-negative values"
         serialized_parameters = torch.sum(

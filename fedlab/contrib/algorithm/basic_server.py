@@ -76,7 +76,7 @@ class SyncServerHandler(ServerHandler):
         # stop condition
         self.global_round = global_round
         self.round = 1
-        self.thetas = torch.ones(10)
+        self.thetas = None
 
     @property
     def downlink_package(self) -> List[torch.Tensor]:
